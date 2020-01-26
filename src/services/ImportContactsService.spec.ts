@@ -1,5 +1,5 @@
-import mongoose from 'mongoose';
 import { Readable } from 'stream';
+import mongoose from 'mongoose';
 
 import ImportContactsService from '@services/ImportContactsService';
 import Contact from '@schemas/Contact';
@@ -28,39 +28,43 @@ describe('Import', () => {
 
   it('shold be able to import new contacts', async () => {
     const contactsFileStream = Readable.from([
-      'arthur@email.com',
-      'arthur@email.com.br',
-      'arthur1@email.com',
+      'arthur@email.com\n',
+      'arthur@email.com.br\n',
+      'arthur1@email.com\n',
     ]);
 
     const importContacts = new ImportContactsService();
 
     await importContacts.run(contactsFileStream, ['Students', 'Class A']);
 
-    const createTags = await Tag.find({});
+    const createTags = await Tag.find({}).lean();
 
     expect(createTags).toEqual([
-      expect.objectContaining({ title: 'Students' }),
-      expect.objectContaining({ title: 'Class A' }),
+      expect.arrayContaining([
+        expect.objectContaining({ title: 'Students' }),
+        expect.objectContaining({ title: 'Class A' }),
+      ]),
     ]);
 
     const createdTagsIds = createTags.map(tag => tag._id);
 
-    const CreatedContacts = await Contact.find({});
+    const createdContacts = await Contact.find({}).lean();
 
-    expect(CreatedContacts).toEqual([
-      expect.objectContaining({
-        email: 'arthur@email.com',
-        tags: createdTagsIds,
-      }),
-      expect.objectContaining({
-        email: 'arthur@email.com.br',
-        tags: createdTagsIds,
-      }),
-      expect.objectContaining({
-        email: 'arthur1@email.com',
-        tags: createdTagsIds,
-      }),
+    expect(createdContacts).toEqual([
+      expect.arrayContaining([
+        expect.objectContaining({
+          email: 'arthur@email.com',
+          tags: createdTagsIds,
+        }),
+        expect.objectContaining({
+          email: 'arthur@email.com.br',
+          tags: createdTagsIds,
+        }),
+        expect.objectContaining({
+          email: 'arthur1@email.com',
+          tags: createdTagsIds,
+        }),
+      ]),
     ]);
   });
 });
