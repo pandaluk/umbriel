@@ -6,7 +6,6 @@ const TagSchema = new Schema(
   {
     title: {
       type: String,
-      lowercase: true,
       trim: true,
       unique: true,
       required: true,

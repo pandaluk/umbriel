@@ -26,7 +26,7 @@ describe('Import', () => {
     await Contact.deleteMany({});
   });
 
-  it('shold be able to import new contacts', async () => {
+  it('should be able to import new contacts', async () => {
     const contactsFileStream = Readable.from([
       'arthur@email.com\n',
       'arthur@email.com.br\n',
@@ -37,20 +37,20 @@ describe('Import', () => {
 
     await importContacts.run(contactsFileStream, ['Students', 'Class A']);
 
-    const createTags = await Tag.find({}).lean();
+    const createdTags = await Tag.find({}).lean();
 
-    expect(createTags).toEqual([
+    expect(createdTags).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ title: 'Students' }),
         expect.objectContaining({ title: 'Class A' }),
       ]),
-    ]);
+    );
 
-    const createdTagsIds = createTags.map(tag => tag._id);
+    const createdTagsIds = createdTags.map(tag => tag._id);
 
     const createdContacts = await Contact.find({}).lean();
 
-    expect(createdContacts).toEqual([
+    expect(createdContacts).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           email: 'arthur@email.com',
@@ -65,6 +65,27 @@ describe('Import', () => {
           tags: createdTagsIds,
         }),
       ]),
+    );
+  });
+
+  it('should not recreate tags that already exists', async () => {
+    const contactsFileStream = Readable.from([
+      'arthur@email.com\n',
+      'arthur@email.com.br\n',
+      'arthur1@email.com\n',
+    ]);
+
+    const importContacts = new ImportContactsService();
+
+    await Tag.create({ title: 'Students' });
+
+    await importContacts.run(contactsFileStream, ['Students', 'Class A']);
+
+    const createdTags = await Tag.find({}).lean();
+
+    expect(createdTags).toEqual([
+      expect.objectContaining({ title: 'Students' }),
+      expect.objectContaining({ title: 'Class A' }),
     ]);
   });
 });

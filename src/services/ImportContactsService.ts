@@ -12,12 +12,23 @@ class ImportContactsService {
 
     const parseCSV = contactsFileStream.pipe(parsers);
 
-    const tagsData = tags.map(tag => ({
-      title: tag,
-    }));
+    const existentTags = await Tag.find({
+      title: {
+        $in: tags,
+      },
+    });
 
-    const createdTags = await Tag.create(tagsData);
-    const tagsIds = createdTags.map(tag => tag._id);
+    const existentTagsTitles = existentTags.map((tag: any) => tag.title);
+    const existentTagsIds = existentTags.map(tag => tag._id);
+
+    const newTagsData = tags
+      .filter(tag => !existentTagsTitles.includes(tag))
+      .map(tag => ({ title: tag }));
+
+    const createdTags = await Tag.create(newTagsData);
+    const createdTagsIds = createdTags.map(tag => tag._id);
+
+    const tagsIds = [...existentTagsIds, ...createdTagsIds];
 
     parseCSV.on('data', async line => {
       const [email] = line;
