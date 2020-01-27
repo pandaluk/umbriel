@@ -88,4 +88,29 @@ describe('Import', () => {
       expect.objectContaining({ title: 'Class A' }),
     ]);
   });
+
+  it('should not recreate contacts that already exists', async () => {
+    const contactsFileStream = Readable.from([
+      'arthur@email.com\n',
+      'arthur@email.com.br\n',
+      'arthur1@email.com\n',
+    ]);
+
+    const importContacts = new ImportContactsService();
+
+    const tag = await Tag.create({ title: 'Students' });
+    await Contact.create({ email: 'arthur@email.com', tags: [tag._id] });
+
+    await importContacts.run(contactsFileStream, ['Class A']);
+
+    const contact = await Contact.find({ email: 'arthur@email.com' })
+      .populate('tags')
+      .lean();
+
+    expect(contact.length).toBe(1);
+    expect(contact[0].tags).toEqual([
+      expect.objectContaining({ title: 'Students' }),
+      expect.objectContaining({ title: 'Class A' }),
+    ]);
+  });
 });
